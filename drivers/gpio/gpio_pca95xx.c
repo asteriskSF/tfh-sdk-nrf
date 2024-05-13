@@ -771,6 +771,13 @@ static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
 #endif
 };
 
+int gpio_pca95xx_probe(const struct device *dev)
+{
+	struct gpio_pca95xx_drv_data * const drv_data =
+		(struct gpio_pca95xx_drv_data * const)dev->data;
+	uint16_t buf;
+	return read_port_reg(dev, REG_CONF_PORT0, 0, &drv_data->reg_cache.dir, &buf);
+}
 /**
  * @brief Initialization function of PCA95XX
  *
@@ -829,7 +836,13 @@ static int gpio_pca95xx_init(const struct device *dev)
 		}
 	}
 #endif
-
+    //TFH not sure why we need this delay but it helps..
+    k_sleep(K_MSEC(150));
+	if (0 != gpio_pca95xx_probe(dev))
+	{
+		LOG_ERR("pca95xx_probe fail");
+		return -ENODEV;
+	}
 	return 0;
 }
 
@@ -874,3 +887,48 @@ DEVICE_DT_INST_DEFINE(inst,						\
 	&gpio_pca95xx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCA95XX_DEVICE_INSTANCE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca95xx_late
+#define GPIO_PCA95XX_LATE_DEVICE_INSTANCE(inst)				\
+static const struct gpio_pca95xx_config gpio_pca95xx_late_##inst##_cfg = {	\
+	.common = {							\
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),	\
+	},								\
+	.bus = I2C_DT_SPEC_INST_GET(inst),				\
+	.capabilities =							\
+		(DT_INST_PROP(inst, has_pud) ? PCA_HAS_PUD : 0) |	\
+		IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (		\
+		(DT_INST_NODE_HAS_PROP(inst, interrupt_gpios) ?		\
+			PCA_HAS_INTERRUPT : 0) |			\
+		(DT_INST_PROP(inst, has_interrupt_mask_reg) ?		\
+			PCA_HAS_INTERRUPT_MASK_REG : 0) |		\
+		))							\
+		0,							\
+	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT,			\
+	(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, interrupt_gpios, {}),)) \
+};									\
+									\
+static struct gpio_pca95xx_drv_data gpio_pca95xx_late_##inst##_drvdata = {	\
+	.reg_cache.input = 0x0,						\
+	.reg_cache.output = 0xFFFF,					\
+	.reg_cache.dir = 0xFFFF,					\
+	.reg_cache.pud_en = 0x0,					\
+	.reg_cache.pud_sel = 0xFFFF,					\
+	.reg_cache.int_mask = 0xFFFF,					\
+	.reg_cache.input_latch = 0x0,				\
+	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (			\
+	.interrupt_active = false,					\
+	))								\
+};									\
+									\
+DEVICE_DT_INST_DEFINE(inst,						\
+	gpio_pca95xx_init,						\
+	NULL,								\
+	&gpio_pca95xx_late_##inst##_drvdata,					\
+	&gpio_pca95xx_late_##inst##_cfg,					\
+	POST_KERNEL,			\
+	CONFIG_GPIO_PCA95XX_LATE_INIT_PRIORITY, \
+	&gpio_pca95xx_drv_api_funcs);
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_PCA95XX_LATE_DEVICE_INSTANCE)

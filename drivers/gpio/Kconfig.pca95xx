@@ -6,7 +6,7 @@
 menuconfig GPIO_PCA95XX
 	bool "PCA95XX I2C-based GPIO chip"
 	default y
-	depends on DT_HAS_NXP_PCA95XX_ENABLED
+	depends on DT_HAS_NXP_PCA95XX_ENABLED || DT_HAS_NXP_PCA95XX_LATE_ENABLED
 	depends on I2C
 	help
 	  Enable driver for PCA95XX I2C-based GPIO chip.
@@ -14,6 +14,13 @@ menuconfig GPIO_PCA95XX
 config GPIO_PCA95XX_INIT_PRIORITY
 	int "Init priority"
 	default 70
+	depends on GPIO_PCA95XX
+	help
+	  Device driver initialization priority.
+
+config GPIO_PCA95XX_LATE_INIT_PRIORITY
+	int "Init priority"
+	default 80
 	depends on GPIO_PCA95XX
 	help
 	  Device driver initialization priority.

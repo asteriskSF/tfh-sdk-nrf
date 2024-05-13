@@ -4,17 +4,29 @@
 config REGULATOR_FIXED
 	bool "GPIO-controlled regulators"
 	default y
-	depends on DT_HAS_REGULATOR_FIXED_ENABLED
+	depends on DT_HAS_REGULATOR_FIXED_ENABLED || DT_HAS_REGULATOR_FIXED_EARLY_ENABLED || DT_HAS_REGULATOR_FIXED_LATE_ENABLED
 	depends on GPIO
 	help
 	  Enable the driver for GPIO-controlled regulators
 
 if REGULATOR_FIXED
 
+config REGULATOR_FIXED_LATE_INIT_PRIORITY
+	int "Init priority"
+	default 85
+	help
+	  Device driver initialization priority
+
 config REGULATOR_FIXED_INIT_PRIORITY
 	int "Init priority"
 	default 75
 	help
 	  Device driver initialization priority
+
+config REGULATOR_FIXED_EARLY_INIT_PRIORITY
+	int "Init priority"
+	default 25
+	help
+	  Device driver early initialization priority
 
 endif # REGULATOR_FIXED

@@ -122,6 +122,7 @@ static int regulator_fixed_init(const struct device *dev)
 	return regulator_common_init(dev, init_enabled);
 }
 
+
 #define REGULATOR_FIXED_DEFINE(inst)                                              \
 	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==         \
 		     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),           \
@@ -137,7 +138,51 @@ static int regulator_fixed_init(const struct device *dev)
                                                                                   \
 	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,      \
 			      &config##inst, POST_KERNEL,                         \
-			      CONFIG_REGULATOR_FIXED_INIT_PRIORITY,               \
+				  CONFIG_REGULATOR_FIXED_INIT_PRIORITY,    \
 			      &regulator_fixed_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT regulator_fixed_early
+#define REGULATOR_FIXED_EARLY_DEFINE(inst)                                              \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==         \
+		     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),           \
+		     "Regulator requires fixed voltages");                        \
+	static struct regulator_fixed_data reg_fix_early_data##inst;                            \
+                                                                                  \
+	static const struct regulator_fixed_config reg_fix_early_config##inst = {               \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),             \
+		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),         \
+		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),           \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
+	};                                                                        \
+                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &reg_fix_early_data##inst,      \
+			      &reg_fix_early_config##inst, POST_KERNEL,                         \
+				  CONFIG_REGULATOR_FIXED_EARLY_INIT_PRIORITY,    \
+			      &regulator_fixed_api);
+
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_EARLY_DEFINE)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT regulator_fixed_late
+#define REGULATOR_FIXED_LATE_DEFINE(inst)                                              \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==         \
+		     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),           \
+		     "Regulator requires fixed voltages");                        \
+	static struct regulator_fixed_data reg_fix_late_data##inst;                            \
+                                                                                  \
+	static const struct regulator_fixed_config reg_fix_late_config##inst = {               \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),             \
+		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),         \
+		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),           \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
+	};                                                                        \
+                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &reg_fix_late_data##inst,      \
+			      &reg_fix_late_config##inst, POST_KERNEL,                         \
+				  CONFIG_REGULATOR_FIXED_LATE_INIT_PRIORITY,    \
+			      &regulator_fixed_api);
+
+DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_LATE_DEFINE)
