@@ -165,6 +165,8 @@ struct i2c_dt_spec {
  * @note Not all SoC I2C implementations support this feature. */
 #define I2C_MSG_ADDR_10_BITS		BIT(3)
 
+/** Swap SCL/SDA pins to work around a board level issue. TFH custom feature */
+#define I2C_MSG_SWAP_PINS		BIT(7)
 /**
  * @brief One I2C Message.
  *

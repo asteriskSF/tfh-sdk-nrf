@@ -52,6 +52,13 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 
 	nrfx_twi_enable(&config->twi);
 
+	if (I2C_MSG_SWAP_PINS & msgs[0].flags )
+	{
+		uint32_t tmp = config->twi.p_twi->PSEL.SCL;
+		config->twi.p_twi->PSEL.SCL = config->twi.p_twi->PSEL.SDA;
+		config->twi.p_twi->PSEL.SDA = tmp;
+	}
+
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
 			ret = -ENOTSUP;
@@ -139,6 +146,12 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			ret = -EIO;
 			break;
 		}
+	}
+	if (I2C_MSG_SWAP_PINS & msgs[0].flags )
+	{
+		uint32_t tmp = config->twi.p_twi->PSEL.SCL;
+		config->twi.p_twi->PSEL.SCL = config->twi.p_twi->PSEL.SDA;
+		config->twi.p_twi->PSEL.SDA = tmp;
 	}
 
 	nrfx_twi_disable(&config->twi);
@@ -271,6 +284,7 @@ static int twi_nrfx_pm_action(const struct device *dev,
 #define I2C_NRFX_TWI_INVALID_FREQUENCY  ((nrf_twi_frequency_t)-1)
 #define I2C_NRFX_TWI_FREQUENCY(bitrate)					       \
 	 (bitrate == I2C_BITRATE_STANDARD ? NRF_TWI_FREQ_100K		       \
+	: bitrate ==  50000               ? NRF_TWI_FREQ_50K		       \
 	: bitrate == 250000               ? NRF_TWI_FREQ_250K		       \
 	: bitrate == I2C_BITRATE_FAST     ? NRF_TWI_FREQ_400K		       \
 					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
